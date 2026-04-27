@@ -1,11 +1,15 @@
 package org.sports.field.booking.resource;
 
+import java.util.List;
+
 import org.sports.field.booking.dto.UserRequestDTO;
 import org.sports.field.booking.dto.UserResponseDTO;
 import org.sports.field.booking.service.UserService;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -20,18 +24,19 @@ public class UserResource {
 
     UserService userService;
 
-    public UserResource(UserService userService) {
+    public UserResource(@Valid UserService userService) {
         this.userService = userService;
     }
 
     @POST
-    public Response createUser(UserRequestDTO request) {
-
+    public Response createUser(@Valid UserRequestDTO request) {
         UserResponseDTO response = userService.createUser(request);
+        return Response.ok(response).build();
+    }
 
-        return Response
-                .status(Response.Status.CREATED)
-                .entity(response)
-                .build();
+    @GET
+    public Response getUsers() {
+        List<UserResponseDTO> users = userService.getAllUser();
+        return Response.ok(users).build();
     }
 }

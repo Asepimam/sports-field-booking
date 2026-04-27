@@ -4,11 +4,10 @@ import java.time.LocalDateTime;
 
 import lombok.Data;
 
-
 @Data
 public class UserResponseDTO {
-    private String id;
-    private String username;
-    private String email;
-    private LocalDateTime createdAt;
+    public String id;
+    public String username;
+    public String email;
+    public LocalDateTime createdAt;
 }

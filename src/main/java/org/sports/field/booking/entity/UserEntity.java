@@ -14,7 +14,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "users", schema = "sports_field_booking",indexes = {
+@Table(name = "users",indexes = {
     @Index(name = "idx_users_email", columnList = "email")
 })
 public class UserEntity extends PanacheEntityBase {
