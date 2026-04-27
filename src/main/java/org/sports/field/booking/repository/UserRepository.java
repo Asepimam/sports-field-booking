@@ -17,4 +17,8 @@ public class UserRepository implements PanacheRepositoryBase<UserEntity, UUID> {
     public boolean existsByEmail(String email) {
         return count("email", email) > 0;
     }
+
+    public java.util.List<UserEntity> getUsers(int page, int size) {
+        return findAll().page(page - 1, size).list();
+    }
 }

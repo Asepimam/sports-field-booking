@@ -37,11 +37,15 @@ public class UserService {
         return userMapper.toResponseDTO(userEntity);
     }
 
-    public List<UserResponseDTO> getAllUser() {
-        List<UserResponseDTO> users = userRepository.listAll()
+    public List<UserResponseDTO> getUsers(int page, int size) {
+        List<UserResponseDTO> users = userRepository.getUsers(page, size)
                 .stream()
                 .map(userMapper::toResponseDTO)
                 .toList();
         return users;
+    }
+
+    public long countUsers() {
+        return userRepository.count();
     }
 }

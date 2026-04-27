@@ -4,15 +4,13 @@ import java.util.List;
 
 import org.sports.field.booking.dto.UserRequestDTO;
 import org.sports.field.booking.dto.UserResponseDTO;
+import org.sports.field.booking.model.ApiResponse;
+import org.sports.field.booking.model.Meta;
 import org.sports.field.booking.service.UserService;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -22,21 +20,34 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
 
-    UserService userService;
+    private final UserService userService;
 
-    public UserResource(@Valid UserService userService) {
+    public UserResource(UserService userService) {
         this.userService = userService;
     }
 
     @POST
     public Response createUser(@Valid UserRequestDTO request) {
-        UserResponseDTO response = userService.createUser(request);
-        return Response.ok(response).build();
+
+        UserResponseDTO user = userService.createUser(request);
+
+        return Response
+                .status(Response.Status.CREATED)
+                .entity(new ApiResponse<>("SUCCESS", user))
+                .build();
     }
 
     @GET
     public Response getUsers() {
-        List<UserResponseDTO> users = userService.getAllUser();
-        return Response.ok(users).build();
+        int page = 1;
+        int size = 10;
+
+        List<UserResponseDTO> users = userService.getUsers(page, size);
+        long total = userService.countUsers();
+
+        Meta meta = new Meta(page, size, total);
+
+        return Response.ok(
+                new ApiResponse<>("SUCCESS", users, meta)).build();
     }
 }
