@@ -12,11 +12,13 @@ import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
-@Table(name = "users",indexes = {
-    @Index(name = "idx_users_email", columnList = "email")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_users_email", columnList = "email")
 })
+@Data
 public class UserEntity extends PanacheEntityBase {
     @Id
     @GeneratedValue()
@@ -28,22 +30,21 @@ public class UserEntity extends PanacheEntityBase {
     @Column(nullable = false, unique = true)
     public String email;
 
-
     @Column(nullable = false)
     public String passwordHash;
 
     @Column(nullable = false, updatable = false)
     public LocalDateTime createdAt;
-   
+
     @Column(nullable = false)
     public LocalDateTime updatedAt;
-    
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
     }
-    
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

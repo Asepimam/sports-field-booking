@@ -1,5 +1,6 @@
 package org.sports.field.booking.repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.sports.field.booking.entity.UserEntity;
@@ -10,8 +11,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class UserRepository implements PanacheRepositoryBase<UserEntity, UUID> {
 
-    public UserEntity findByEmail(String email) {
-        return find("email", email).firstResult();
+    public Optional<UserEntity> findByEmail(String email) {
+        return find("email", email).firstResultOptional();
     }
 
     public boolean existsByEmail(String email) {
