@@ -13,11 +13,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class GroundRepository implements PanacheRepositoryBase<GroundEntity, UUID> {
 
     public Optional<GroundEntity> findByName(String name) {
-        return find("name_ground", name).firstResultOptional();
+        // ✅ Gunakan field Java "nameGround", BUKAN column name "name_ground"
+        return find("nameGround", name).firstResultOptional();
     }
 
     public boolean existsByName(String name) {
-        return count("name_ground", name) > 0
+        // ✅ Gunakan field Java "nameGround" dan "location"
+        return count("nameGround", name) > 0
                 || count("location", name) > 0;
     }
 
