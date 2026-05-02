@@ -8,6 +8,8 @@ import org.sports.field.booking.model.ApiResponse;
 import org.sports.field.booking.model.Meta;
 import org.sports.field.booking.service.UserService;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -18,23 +20,13 @@ import jakarta.ws.rs.core.Response;
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "User", "Admin" })
 public class UserResource {
 
     private final UserService userService;
 
     public UserResource(UserService userService) {
         this.userService = userService;
-    }
-
-    @POST
-    public Response createUser(@Valid UserRequestDTO request) {
-
-        UserResponseDTO user = userService.createUser(request);
-
-        return Response
-                .status(Response.Status.CREATED)
-                .entity(new ApiResponse<>("SUCCESS", user))
-                .build();
     }
 
     @GET

@@ -5,9 +5,13 @@ import org.sports.field.booking.dto.EmailCheckResponse;
 import org.sports.field.booking.dto.LoginRequestDTO;
 
 import org.sports.field.booking.dto.RefreshTokenRequestDTO;
+import org.sports.field.booking.dto.UserRequestDTO;
+import org.sports.field.booking.dto.UserResponseDTO;
 import org.sports.field.booking.model.ApiResponse;
 import org.sports.field.booking.service.AuthService;
+import org.sports.field.booking.service.UserService;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -32,6 +36,9 @@ public class AuthResource {
     @Inject
     SecurityContext securityContext;
 
+    @Inject
+    UserService userService;
+
     @POST
     @Path("/login")
     public Response login(@Valid LoginRequestDTO request) {
@@ -43,6 +50,18 @@ public class AuthResource {
                     .entity(new ApiResponse<>("FAILURE", e.getMessage()))
                     .build();
         }
+    }
+
+    @POST
+    @Path("/register")
+    public Response createUser(@Valid UserRequestDTO request) {
+
+        UserResponseDTO user = userService.createUser(request);
+
+        return Response
+                .status(Response.Status.CREATED)
+                .entity(new ApiResponse<>("SUCCESS", user))
+                .build();
     }
 
     @POST
@@ -60,6 +79,7 @@ public class AuthResource {
 
     @POST
     @Path("/validate")
+    @RolesAllowed({ "User", "Admin" })
     public Response validateToken(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
         try {
             // Extract token from Bearer header
@@ -88,6 +108,7 @@ public class AuthResource {
 
     @POST
     @Path("/logout")
+    @RolesAllowed({ "User", "Admin" })
     public Response logout(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
         try {
             // Extract token from Bearer header
@@ -110,6 +131,7 @@ public class AuthResource {
 
     @POST
     @Path("/me")
+    @RolesAllowed({ "User", "Admin" })
     public Response getCurrentUser(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
         try {
             // Extract token from Bearer header

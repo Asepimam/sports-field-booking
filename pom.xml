@@ -117,6 +117,12 @@
             <artifactId>smallrye-jwt-build</artifactId>
         </dependency>
 
+        <!-- qurkus securty -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-security</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

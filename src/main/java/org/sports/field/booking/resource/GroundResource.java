@@ -8,6 +8,7 @@ import org.sports.field.booking.model.ApiResponse;
 import org.sports.field.booking.model.Meta;
 import org.sports.field.booking.service.GroundService;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -22,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 @Path("grounds")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "User", "Admin" })
 public class GroundResource {
     private final GroundService groundService;
 
