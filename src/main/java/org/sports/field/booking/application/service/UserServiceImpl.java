@@ -8,6 +8,7 @@ import org.sports.field.booking.application.exception.ConflictException;
 import org.sports.field.booking.application.exception.DatabaseException;
 import org.sports.field.booking.application.security.PasswordHasher;
 import org.sports.field.booking.application.mapper.UserMapper;
+import org.sports.field.booking.domain.entity.Role;
 import org.sports.field.booking.domain.repository.UserRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -35,6 +36,9 @@ public class UserServiceImpl implements UserService {
             }
 
             var userEntity = userMapper.toEntity(userRequestDTO);
+            if (userEntity.role == null) {
+                userEntity.role = Role.CUSTOMER;
+            }
             userEntity.passwordHash = passwordHasher.hash(userRequestDTO.getPassword());
             userRepository.save(userEntity);
 

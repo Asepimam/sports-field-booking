@@ -11,6 +11,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -38,6 +39,9 @@ public class UserEntity extends PanacheEntityBase {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "varchar(255) default 'CUSTOMER'")
     public Role role = Role.CUSTOMER;
+
+    @OneToOne(mappedBy = "user")
+    public ProfileEntity profile;
 
     @Column(nullable = false, updatable = false)
     public LocalDateTime createdAt;

@@ -2,6 +2,8 @@ package org.sports.field.booking.application.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.sports.field.booking.domain.entity.Role;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -20,4 +22,6 @@ public class UserRequestDTO {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
+
+    private Role role = Role.CUSTOMER;
 }

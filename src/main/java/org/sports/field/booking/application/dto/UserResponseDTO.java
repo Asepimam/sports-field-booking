@@ -9,5 +9,6 @@ public class UserResponseDTO {
     public String id;
     public String username;
     public String email;
+    public String role;
     public LocalDateTime createdAt;
 }

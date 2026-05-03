@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.sports.field.booking.application.dto.UserRequestDTO;
@@ -103,6 +104,11 @@ class UserServiceImplTest {
         @Override
         public Optional<UserEntity> findByEmail(String email) {
             return users.stream().filter(user -> user.email.equals(email)).findFirst();
+        }
+
+        @Override
+        public Optional<UserEntity> findOptionalById(UUID id) {
+            return users.stream().filter(user -> id.equals(user.id)).findFirst();
         }
 
         @Override

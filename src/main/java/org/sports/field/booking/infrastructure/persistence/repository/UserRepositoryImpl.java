@@ -19,6 +19,11 @@ public class UserRepositoryImpl implements UserRepository, PanacheRepositoryBase
     }
 
     @Override
+    public Optional<UserEntity> findOptionalById(UUID id) {
+        return findByIdOptional(id);
+    }
+
+    @Override
     public boolean existsByEmail(String email) {
         return count("email", email) > 0;
     }

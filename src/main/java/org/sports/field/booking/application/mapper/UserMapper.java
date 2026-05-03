@@ -11,9 +11,13 @@ public interface UserMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "passwordHash", ignore = true)
+    @Mapping(target = "profile", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "userName", source = "username")
     UserEntity toEntity(UserRequestDTO dto);
 
     @Mapping(target = "username", source = "userName")
+    @Mapping(target = "role", expression = "java(entity.role == null ? null : entity.role.name())")
     UserResponseDTO toResponseDTO(UserEntity entity);
 }

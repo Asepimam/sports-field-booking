@@ -2,16 +2,13 @@ package org.sports.field.booking.interfaces.rest;
 
 import java.util.List;
 
-import org.sports.field.booking.application.dto.UserRequestDTO;
 import org.sports.field.booking.application.dto.UserResponseDTO;
 import org.sports.field.booking.interfaces.model.ApiResponse;
 import org.sports.field.booking.interfaces.model.Meta;
 import org.sports.field.booking.application.service.UserService;
 
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
