@@ -10,6 +10,7 @@ import org.sports.field.booking.domain.entity.GroundEntity;
 public interface GroundMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     // Tidak perlu @Mapping untuk nameGround, location, pricePerHour, isAvailable

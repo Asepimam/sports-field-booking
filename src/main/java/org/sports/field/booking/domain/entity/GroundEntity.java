@@ -9,6 +9,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -36,6 +38,10 @@ public class GroundEntity extends PanacheEntityBase {
 
     @Column(length = 1000, nullable = false, name = "is_available", columnDefinition = "BOOLEAN DEFAULT TRUE")
     public Boolean isAvailable;
+
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    public UserEntity owner;
 
     @Column(nullable = false, updatable = false, name = "created_at")
     public LocalDateTime createdAt;
