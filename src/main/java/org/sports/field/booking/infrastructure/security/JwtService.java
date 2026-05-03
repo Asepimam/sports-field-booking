@@ -18,7 +18,9 @@ import org.jboss.logging.Logger;
 
 import io.smallrye.jwt.build.Jwt;
 import io.smallrye.jwt.auth.principal.DefaultJWTParser;
+import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
 import io.smallrye.jwt.auth.principal.JWTParser;
+import io.smallrye.jwt.auth.principal.ParseException;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
@@ -29,53 +31,58 @@ public class JwtService implements TokenService {
     private PrivateKey privateKey;
     private PublicKey publicKey;
     private JWTParser jwtParser;
+    private JWTAuthContextInfo authContextInfo;
 
     public JwtService() {
+        loadKeys();
+        // Initialize parser with public key for verification
+        this.authContextInfo = new JWTAuthContextInfo(publicKey, "your-issuer");
         this.jwtParser = new DefaultJWTParser();
     }
 
-    // Inisialisasi key saat pertama kali digunakan
-    private void initKeys() throws Exception {
-        if (privateKey == null) {
-            loadKeys();
+    private void loadKeys() {
+        try {
+            // Load private key
+            InputStream privateIs = Thread.currentThread()
+                    .getContextClassLoader()
+                    .getResourceAsStream("privateKey_pkcs8.pem");
+
+            if (privateIs == null) {
+                throw new RuntimeException("privateKey_pkcs8.pem not found in classpath");
+            }
+
+            String privateKeyContent = new String(privateIs.readAllBytes(), StandardCharsets.UTF_8);
+            this.privateKey = loadPrivateKey(privateKeyContent);
+
+            // Load public key
+            InputStream publicIs = Thread.currentThread()
+                    .getContextClassLoader()
+                    .getResourceAsStream("publicKey.pem");
+
+            if (publicIs == null) {
+                throw new RuntimeException("publicKey.pem not found in classpath");
+            }
+
+            String publicKeyContent = new String(publicIs.readAllBytes(), StandardCharsets.UTF_8);
+            this.publicKey = loadPublicKey(publicKeyContent);
+
+            LOG.info("JWT keys loaded successfully");
+        } catch (Exception e) {
+            LOG.error("Failed to load JWT keys: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to initialize JWT keys", e);
         }
-    }
-
-    private void loadKeys() throws Exception {
-        // Load private key
-        InputStream privateIs = Thread.currentThread()
-                .getContextClassLoader()
-                .getResourceAsStream("privateKey_pkcs8.pem");
-
-        if (privateIs == null) {
-            throw new RuntimeException("privateKey_pkcs8.pem not found in classpath");
-        }
-
-        String privateKeyContent = new String(privateIs.readAllBytes(), StandardCharsets.UTF_8);
-        this.privateKey = loadPrivateKey(privateKeyContent);
-
-        // Load public key
-        InputStream publicIs = Thread.currentThread()
-                .getContextClassLoader()
-                .getResourceAsStream("publicKey.pem");
-
-        if (publicIs == null) {
-            throw new RuntimeException("publicKey.pem not found in classpath");
-        }
-
-        String publicKeyContent = new String(publicIs.readAllBytes(), StandardCharsets.UTF_8);
-        this.publicKey = loadPublicKey(publicKeyContent);
     }
 
     @Override
     public String generateToken(String username, Role role) throws Exception {
-        initKeys();
+        // Pastikan issuer MATCH dengan konfigurasi di application.properties
+        String issuer = "your-issuer"; // Harus sama dengan di application.properties
 
-        return Jwt.issuer("your-issuer")
+        return Jwt.issuer(issuer)
                 .subject(username)
                 .claim("token_type", "access")
                 .groups(Set.of(role.name()))
-                .expiresIn(3600) // 1 hour
+                .expiresIn(3600)
                 .sign(privateKey);
     }
 
@@ -86,31 +93,26 @@ public class JwtService implements TokenService {
 
     @Override
     public String generateRefreshToken(String username) throws Exception {
-        initKeys();
-
         return Jwt.issuer("your-issuer")
                 .subject(username)
                 .claim("token_type", "refresh")
-                .expiresIn(7 * 24 * 3600) // 7 days
+                .expiresIn(7 * 24 * 3600)
                 .sign(privateKey);
     }
 
     @Override
     public String refreshAccessToken(String refreshToken) throws Exception {
-        // Validate refresh token
         TokenValidationResult validationResult = validateToken(refreshToken);
 
         if (!validationResult.isValid()) {
             throw new RuntimeException("Invalid refresh token: " + validationResult.getErrorMessage());
         }
 
-        // Check if it's a refresh token
         String tokenType = validationResult.getClaim("token_type");
         if (!"refresh".equals(tokenType)) {
             throw new RuntimeException("Invalid token type. Expected refresh token");
         }
 
-        // Generate new access token
         String username = validationResult.getSubject();
         return generateToken(username);
     }
@@ -118,30 +120,32 @@ public class JwtService implements TokenService {
     @Override
     public TokenValidationResult validateToken(String token) {
         try {
-            initKeys();
+            // VERIFY token with public key
+            var jwt = jwtParser.parse(token, authContextInfo); // ← Ini benar, verifikasi signature
 
-            // Parse and verify JWT with public key
-            var jwt = jwtParser.verify(token, publicKey);
-
-            // Check expiration via claim
+            // Check expiration
             Long exp = jwt.getClaim("exp");
             if (exp != null && Instant.ofEpochSecond(exp).isBefore(Instant.now())) {
                 return new TokenValidationResult(false, "Token has expired");
             }
 
-            // Check issuer
-            String issuer = jwt.getIssuer();
-            if (issuer == null || !"your-issuer".equals(issuer)) {
-                return new TokenValidationResult(false, "Invalid issuer");
-            }
-
-            // Token is valid
             TokenValidationResult result = new TokenValidationResult(true, null);
             result.setSubject(jwt.getName());
-            result.setClaim("token_type", jwt.getClaim("token_type"));
+
+            // Get claims
+            Object tokenTypeClaim = jwt.getClaim("token_type");
+            Object groupsClaim = jwt.getClaim("groups");
+
+            result.setClaim("token_type", tokenTypeClaim != null ? tokenTypeClaim.toString() : null);
+            result.setClaim("groups", groupsClaim);
+
+            LOG.debug("Token validated successfully for user: " + jwt.getName());
 
             return result;
 
+        } catch (ParseException e) {
+            LOG.error("Failed to validate JWT: " + e.getMessage(), e);
+            return new TokenValidationResult(false, "Token validation failed: " + e.getMessage());
         } catch (Exception e) {
             LOG.error("Failed to validate JWT: " + e.getMessage(), e);
             return new TokenValidationResult(false, "Token validation failed: " + e.getMessage());
@@ -172,7 +176,6 @@ public class JwtService implements TokenService {
     }
 
     private PrivateKey loadPrivateKey(String pemContent) throws Exception {
-        // Remove PEM headers and footers
         String privateKeyPEM = pemContent
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
@@ -180,34 +183,25 @@ public class JwtService implements TokenService {
                 .replace("-----END RSA PRIVATE KEY-----", "")
                 .replaceAll("\\s", "");
 
-        // Decode Base64
-        byte[] encoded;
-        try {
-            encoded = Base64.getDecoder().decode(privateKeyPEM);
-        } catch (IllegalArgumentException e) {
-            LOG.error("Failed to decode private key", e);
-            throw new RuntimeException("Invalid private key format", e);
-        }
-
-        // Generate PrivateKey
+        byte[] encoded = Base64.getDecoder().decode(privateKeyPEM);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         return keyFactory.generatePrivate(keySpec);
     }
 
     private PublicKey loadPublicKey(String pemContent) throws Exception {
-        // Remove PEM headers and footers
         String publicKeyPEM = pemContent
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
 
-        // Decode Base64
         byte[] encoded = Base64.getDecoder().decode(publicKeyPEM);
-
-        // Generate PublicKey
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         return keyFactory.generatePublic(keySpec);
+    }
+
+    public PublicKey getPublicKey() {
+        return publicKey;
     }
 }
