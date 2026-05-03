@@ -1,0 +1,124 @@
+package org.sports.field.booking.application.service;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.sports.field.booking.application.dto.GroundRequestDTO;
+import org.sports.field.booking.application.dto.GroundResponseDTO;
+import org.sports.field.booking.domain.entity.GroundEntity;
+import org.sports.field.booking.application.exception.ConflictException;
+import org.sports.field.booking.application.mapper.GroundMapper;
+import org.sports.field.booking.domain.repository.GroundRepository;
+
+class GroundServiceImplTest {
+
+    @Test
+    void createGroundDefaultsAvailabilityAndSavesGround() {
+        FakeGroundRepository repository = new FakeGroundRepository();
+        GroundService service = new GroundServiceImpl(new TestGroundMapper(), repository);
+
+        GroundRequestDTO request = groundRequest("Court A");
+        request.isAvailable = null;
+        GroundResponseDTO response = service.createGround(request);
+
+        assertEquals("Court A", response.getNameGround());
+        assertTrue(repository.saved.isAvailable);
+    }
+
+    @Test
+    void createGroundRejectsDuplicateName() {
+        FakeGroundRepository repository = new FakeGroundRepository();
+        repository.grounds.add(ground("Court A"));
+        GroundService service = new GroundServiceImpl(new TestGroundMapper(), repository);
+
+        assertThrows(ConflictException.class, () -> service.createGround(groundRequest("Court A")));
+    }
+
+    @Test
+    void getGroundsReturnsMappedGrounds() {
+        FakeGroundRepository repository = new FakeGroundRepository();
+        repository.grounds.add(ground("Court A"));
+        repository.grounds.add(ground("Court B"));
+        GroundService service = new GroundServiceImpl(new TestGroundMapper(), repository);
+
+        assertEquals(2, service.getGrounds(1, 10).size());
+        assertEquals(2, service.countGrounds());
+    }
+
+    private static GroundRequestDTO groundRequest(String name) {
+        GroundRequestDTO dto = new GroundRequestDTO();
+        dto.nameGround = name;
+        dto.location = "Jakarta";
+        dto.pricePerHour = 100_000L;
+        dto.isAvailable = true;
+        return dto;
+    }
+
+    private static GroundEntity ground(String name) {
+        GroundEntity entity = new GroundEntity();
+        entity.nameGround = name;
+        entity.location = "Jakarta";
+        entity.pricePerHour = 100_000L;
+        entity.isAvailable = true;
+        return entity;
+    }
+
+    private static class TestGroundMapper implements GroundMapper {
+        @Override
+        public GroundEntity toEntity(GroundRequestDTO dto) {
+            GroundEntity entity = new GroundEntity();
+            entity.nameGround = dto.nameGround;
+            entity.location = dto.location;
+            entity.pricePerHour = dto.pricePerHour;
+            entity.isAvailable = dto.isAvailable;
+            return entity;
+        }
+
+        @Override
+        public GroundResponseDTO toResponseDTO(GroundEntity entity) {
+            GroundResponseDTO dto = new GroundResponseDTO();
+            dto.setNameGround(entity.nameGround);
+            dto.setLocation(entity.location);
+            dto.setPricePerHour(entity.pricePerHour);
+            dto.setIsAvailable(entity.isAvailable);
+            return dto;
+        }
+    }
+
+    private static class FakeGroundRepository implements GroundRepository {
+        private final List<GroundEntity> grounds = new ArrayList<>();
+        private GroundEntity saved;
+
+        @Override
+        public Optional<GroundEntity> findByName(String name) {
+            return grounds.stream().filter(ground -> ground.nameGround.equals(name)).findFirst();
+        }
+
+        @Override
+        public boolean existsByName(String name) {
+            return findByName(name).isPresent();
+        }
+
+        @Override
+        public List<GroundEntity> getGrounds(int page, int size) {
+            return grounds;
+        }
+
+        @Override
+        public void save(GroundEntity ground) {
+            saved = ground;
+            grounds.add(ground);
+        }
+
+        @Override
+        public long countGrounds() {
+            return grounds.size();
+        }
+    }
+}
