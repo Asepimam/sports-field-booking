@@ -12,6 +12,7 @@ import org.sports.field.booking.interfaces.model.ApiResponse;
 import org.sports.field.booking.application.service.AuthService;
 import org.sports.field.booking.application.service.UserService;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -42,6 +43,7 @@ public class AuthResource {
 
     @POST
     @Path("/login")
+    @PermitAll
     public Response login(@Valid LoginRequestDTO request) {
         var response = authService.login(request);
         return Response.ok(new ApiResponse<>("SUCCESS", response)).build();
@@ -49,6 +51,7 @@ public class AuthResource {
 
     @POST
     @Path("/register")
+    @PermitAll
     public Response createUser(@Valid UserRequestDTO request) {
 
         UserResponseDTO user = userService.createUser(request);
@@ -61,6 +64,7 @@ public class AuthResource {
 
     @POST
     @Path("/refresh")
+    @PermitAll
     public Response refreshToken(@Valid RefreshTokenRequestDTO request) {
         var response = authService.refreshToken(request);
         return Response.ok(new ApiResponse<>("SUCCESS", response)).build();
@@ -102,6 +106,7 @@ public class AuthResource {
 
     @POST
     @Path("/check-email")
+    @PermitAll
     public Response checkEmail(@Valid CheckEmailRequestDTO request) {
         boolean exists = authService.checkEmailExists(request.getEmail());
         return Response.ok(new ApiResponse<>("SUCCESS",
