@@ -11,8 +11,21 @@ import lombok.Data;
 
 @Data
 public class UserRequestDTO {
+    @NotBlank(message = "First name is required")
+    @JsonProperty("first_name")
+    private String firstName;
+
+    @NotBlank(message = "Last name is required")
+    @JsonProperty("last_name")
+    private String lastName;
+
+    @NotBlank(message = "Phone number is required")
+    @JsonProperty("phone_number")
+    @Size(min = 10, max = 15, message = "Phone number must be between 10 and 15 characters")
+    private String phoneNumber;
 
     @NotBlank(message = "Username is required")
+    @JsonProperty("user_name")
     private String username;
 
     @NotBlank(message = "Email is required")

@@ -74,12 +74,13 @@ public class JwtService implements TokenService {
     }
 
     @Override
-    public String generateToken(String username, Role role) throws Exception {
+    public String generateToken(String userName, Role role) throws Exception {
         // Pastikan issuer MATCH dengan konfigurasi di application.properties
         String issuer = "your-issuer"; // Harus sama dengan di application.properties
 
         return Jwt.issuer(issuer)
-                .subject(username)
+                .subject(userName)
+                .upn(userName)
                 .claim("token_type", "access")
                 .groups(Set.of(role.name()))
                 .expiresIn(3600)
@@ -87,14 +88,15 @@ public class JwtService implements TokenService {
     }
 
     @Override
-    public String generateToken(String username) throws Exception {
-        return generateToken(username, Role.CUSTOMER);
+    public String generateToken(String userName) throws Exception {
+        return generateToken(userName, Role.CUSTOMER);
     }
 
     @Override
-    public String generateRefreshToken(String username) throws Exception {
+    public String generateRefreshToken(String userName) throws Exception {
         return Jwt.issuer("your-issuer")
-                .subject(username)
+                .subject(userName)
+                .upn(userName)
                 .claim("token_type", "refresh")
                 .expiresIn(7 * 24 * 3600)
                 .sign(privateKey);

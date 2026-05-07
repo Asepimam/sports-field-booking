@@ -3,13 +3,21 @@ package org.sports.field.booking.application.service;
 import org.sports.field.booking.application.dto.LoginRequestDTO;
 import org.sports.field.booking.application.dto.LoginResponseDTO;
 import org.sports.field.booking.application.dto.RefreshTokenRequestDTO;
+import org.sports.field.booking.application.dto.UserRequestDTO;
+import org.sports.field.booking.application.dto.UserResponseDTO;
+import org.sports.field.booking.domain.entity.ProfileEntity;
+import org.sports.field.booking.domain.entity.Role;
 import org.sports.field.booking.domain.entity.UserEntity;
 import org.sports.field.booking.application.exception.AuthenticationException;
 import org.sports.field.booking.application.exception.DatabaseException;
 import org.sports.field.booking.application.exception.NotFoundException;
 import org.sports.field.booking.application.exception.ServerException;
+import org.sports.field.booking.application.mapper.ProfileMapper;
+import org.sports.field.booking.application.mapper.UserMapper;
+import org.sports.field.booking.application.mapper.UserMapperImpl;
 import org.sports.field.booking.application.security.PasswordHasher;
 import org.sports.field.booking.application.security.TokenService;
+import org.sports.field.booking.domain.repository.ProfileRepository;
 import org.sports.field.booking.domain.repository.UserRepository;
 import org.sports.field.booking.application.security.TokenValidationResult;
 
@@ -21,15 +29,53 @@ import jakarta.transaction.Transactional;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
     private final PasswordHasher passwordHasher;
     private final TokenService tokenService;
+    private final UserMapper userMapper;
+    private final ProfileMapper profileMapper;
 
     public AuthServiceImpl(UserRepository userRepository,
             TokenService tokenService,
-            PasswordHasher passwordHasher) {
+            PasswordHasher passwordHasher,
+            ProfileRepository profileRepository,
+            UserMapper userMapper,
+            ProfileMapper profileMapper) {
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.passwordHasher = passwordHasher;
+        this.profileRepository = profileRepository;
+        this.userMapper = userMapper;
+        this.profileMapper = profileMapper;
+    }
+
+    @Override
+    @Transactional(rollbackOn = { AuthenticationException.class, DatabaseException.class, ServerException.class })
+    public UserResponseDTO register(UserRequestDTO userRequest) {
+        try {
+            if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
+                throw new AuthenticationException("Email already in use");
+            }
+
+            UserEntity user = userMapper.toEntity(userRequest);
+            if (user.role == null) {
+                user.role = Role.CUSTOMER;
+            }
+            user.passwordHash = passwordHasher.hash(userRequest.getPassword());
+
+            ProfileEntity profile = profileMapper.toEntity(userRequest);
+            userRepository.save(user);
+            profile.user = user;
+            profileRepository.save(profile);
+            return userMapper.toResponseDTO(user);
+
+        } catch (AuthenticationException ex) {
+            throw ex;
+        } catch (PersistenceException ex) {
+            throw new DatabaseException("Failed to register user", ex);
+        } catch (Exception ex) {
+            throw new ServerException("Failed to register user", ex);
+        }
     }
 
     @Override

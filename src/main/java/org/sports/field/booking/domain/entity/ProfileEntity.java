@@ -55,4 +55,16 @@ public class ProfileEntity extends PanacheEntityBase {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    public String getUsername() {
+        return user != null ? user.userName : null;
+    }
+
+    public String getUserEmail() {
+        return user != null ? user.email : null;
+    }
+
+    public Role getUserRole() {
+        return user != null ? user.role : null;
+    }
 }

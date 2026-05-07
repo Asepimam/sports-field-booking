@@ -54,7 +54,7 @@ public class AuthResource {
     @PermitAll
     public Response createUser(@Valid UserRequestDTO request) {
 
-        UserResponseDTO user = userService.createUser(request);
+        UserResponseDTO user = authService.register(request);
 
         return Response
                 .status(Response.Status.CREATED)

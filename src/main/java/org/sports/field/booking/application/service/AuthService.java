@@ -3,6 +3,8 @@ package org.sports.field.booking.application.service;
 import org.sports.field.booking.application.dto.LoginRequestDTO;
 import org.sports.field.booking.application.dto.LoginResponseDTO;
 import org.sports.field.booking.application.dto.RefreshTokenRequestDTO;
+import org.sports.field.booking.application.dto.UserRequestDTO;
+import org.sports.field.booking.application.dto.UserResponseDTO;
 import org.sports.field.booking.domain.entity.UserEntity;
 import org.sports.field.booking.application.security.TokenValidationResult;
 
@@ -22,4 +24,6 @@ public interface AuthService {
     UserEntity getCurrentUser(String token);
 
     boolean checkEmailExists(String email);
+
+    UserResponseDTO register(UserRequestDTO userRequest);
 }
