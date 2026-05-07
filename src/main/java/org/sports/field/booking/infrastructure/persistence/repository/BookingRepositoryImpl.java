@@ -1,6 +1,8 @@
 package org.sports.field.booking.infrastructure.persistence.repository;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 
 import org.sports.field.booking.domain.entity.BookingEntity;
@@ -51,5 +53,26 @@ public class BookingRepositoryImpl implements BookingRepository, PanacheReposito
                 .setParameter("cancelledStatus", BookingStatus.CANCELLED)
                 .getSingleResult();
         return revenue == null ? 0 : revenue;
+    }
+
+    @Override
+    public boolean existsOverlappingBooking(UUID groundId, LocalDate bookingDate, LocalTime startTime,
+            LocalTime endTime) {
+        return count("""
+                ground.id = ?1
+                and bookingDate = ?2
+                and status <> ?3
+                and startTime < ?4
+                and endTime > ?5
+                """, groundId, bookingDate, BookingStatus.CANCELLED, endTime, startTime) > 0;
+    }
+
+    @Override
+    public List<BookingEntity> getBookingsByGroundAndDate(UUID groundId, LocalDate bookingDate) {
+        return find("""
+                ground.id = ?1
+                and bookingDate = ?2
+                and status <> ?3
+                """, groundId, bookingDate, BookingStatus.CANCELLED).list();
     }
 }

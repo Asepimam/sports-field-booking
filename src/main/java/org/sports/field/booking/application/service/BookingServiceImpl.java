@@ -1,7 +1,11 @@
 package org.sports.field.booking.application.service;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.sports.field.booking.application.dto.BookingRequestDTO;
 import org.sports.field.booking.application.dto.BookingResponseDTO;
@@ -46,6 +50,16 @@ public class BookingServiceImpl implements BookingService {
 
             if (Boolean.FALSE.equals(ground.isAvailable)) {
                 throw new InputException("Ground is not available");
+            }
+
+            validateInsideOperatingHours(ground, request.getStartTime(), request.getEndTime());
+
+            if (bookingRepository.existsOverlappingBooking(
+                    request.getGroundId(),
+                    request.getBookingDate(),
+                    request.getStartTime(),
+                    request.getEndTime())) {
+                throw new InputException("Selected slot is not available");
             }
 
             BookingEntity booking = new BookingEntity();
@@ -108,10 +122,64 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    @Override
+    public List<String> getAvailableSlots(UUID groundId, LocalDate date) {
+        try {
+            if (date == null) {
+                throw new InputException("Date is required");
+            }
+
+            GroundEntity ground = groundRepository.findOptionalById(groundId)
+                    .orElseThrow(() -> new NotFoundException("Ground not found"));
+
+            if (Boolean.FALSE.equals(ground.isAvailable)) {
+                return List.of();
+            }
+
+            List<BookingEntity> bookings = bookingRepository.getBookingsByGroundAndDate(groundId, date);
+            List<String> availableSlots = new ArrayList<>();
+
+            LocalTime current = ground.openTime;
+            while (current.isBefore(ground.closeTime)) {
+                LocalTime slotEnd = current.plusHours(1);
+                if (slotEnd.isAfter(ground.closeTime)) {
+                    break;
+                }
+
+                LocalTime slotStart = current;
+                boolean isBooked = bookings.stream()
+                        .anyMatch(booking -> overlaps(slotStart, slotEnd, booking.startTime, booking.endTime));
+
+                if (!isBooked) {
+                    availableSlots.add(slotStart.toString());
+                }
+
+                current = slotEnd;
+            }
+
+            return availableSlots;
+        } catch (InputException | NotFoundException ex) {
+            throw ex;
+        } catch (PersistenceException ex) {
+            throw new DatabaseException("Failed to fetch available slots", ex);
+        }
+    }
+
     private void validateTimeRange(BookingRequestDTO request) {
         if (!request.getEndTime().isAfter(request.getStartTime())) {
             throw new InputException("End time must be after start time");
         }
+    }
+
+    private void validateInsideOperatingHours(GroundEntity ground, LocalTime startTime, LocalTime endTime) {
+        if (startTime.isBefore(ground.openTime) || endTime.isAfter(ground.closeTime)) {
+            throw new InputException("Booking time is outside operating hours");
+        }
+    }
+
+    private boolean overlaps(LocalTime startTime, LocalTime endTime, LocalTime bookedStartTime,
+            LocalTime bookedEndTime) {
+        return startTime.isBefore(bookedEndTime) && endTime.isAfter(bookedStartTime);
     }
 
     private Long calculateTotalPrice(Long pricePerHour, BookingRequestDTO request) {

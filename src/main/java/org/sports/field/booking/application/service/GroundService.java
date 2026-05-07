@@ -1,6 +1,7 @@
 package org.sports.field.booking.application.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.sports.field.booking.application.dto.GroundRequestDTO;
 import org.sports.field.booking.application.dto.GroundResponseDTO;
@@ -8,9 +9,13 @@ import org.sports.field.booking.application.dto.GroundResponseDTO;
 public interface GroundService {
     GroundResponseDTO createGround(String ownerEmail, GroundRequestDTO groundRequestDTO);
 
+    GroundResponseDTO updateGround(String ownerEmail, UUID id, GroundRequestDTO groundRequestDTO);
+
     List<GroundResponseDTO> getGrounds(int page, int size);
 
     long countGrounds();
+
+    GroundResponseDTO getGroundById(UUID id);
 
     List<GroundResponseDTO> getOwnerGrounds(String ownerEmail, int page, int size);
 

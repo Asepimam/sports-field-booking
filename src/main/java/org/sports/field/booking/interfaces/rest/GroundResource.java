@@ -1,11 +1,14 @@
 package org.sports.field.booking.interfaces.rest;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.util.UUID;
 
 import org.sports.field.booking.application.dto.GroundRequestDTO;
 import org.sports.field.booking.application.dto.GroundResponseDTO;
 import org.sports.field.booking.interfaces.model.ApiResponse;
 import org.sports.field.booking.interfaces.model.Meta;
+import org.sports.field.booking.application.service.BookingService;
 import org.sports.field.booking.application.service.GroundService;
 
 import jakarta.annotation.security.PermitAll;
@@ -15,9 +18,11 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -30,9 +35,11 @@ import jakarta.ws.rs.core.SecurityContext;
 @Consumes(MediaType.APPLICATION_JSON)
 public class GroundResource {
     private final GroundService groundService;
+    private final BookingService bookingService;
 
-    public GroundResource(GroundService groundService) {
+    public GroundResource(GroundService groundService, BookingService bookingService) {
         this.groundService = groundService;
+        this.bookingService = bookingService;
     }
 
     @POST
@@ -44,6 +51,15 @@ public class GroundResource {
                 .status(Response.Status.CREATED)
                 .entity(new ApiResponse<>("SUCCESS", ground))
                 .build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    @RolesAllowed("OWNER")
+    public Response updateGround(@PathParam("id") UUID id, @Valid GroundRequestDTO request) {
+        GroundResponseDTO ground = groundService.updateGround(currentEmail(), id, request);
+
+        return Response.ok(new ApiResponse<>("SUCCESS", ground)).build();
     }
 
     @GET
@@ -58,6 +74,24 @@ public class GroundResource {
         Meta meta = new Meta(page, size, total);
         return Response.ok(
                 new ApiResponse<>("SUCCESS", grounds, meta)).build();
+    }
+
+    @GET
+    @Path("/{id}")
+    @PermitAll
+    public Response getGroundById(@PathParam("id") UUID id) {
+        GroundResponseDTO ground = groundService.getGroundById(id);
+
+        return Response.ok(new ApiResponse<>("SUCCESS", ground)).build();
+    }
+
+    @GET
+    @Path("/{id}/available-slots")
+    @PermitAll
+    public Response getAvailableSlots(@PathParam("id") UUID id, @QueryParam("date") LocalDate date) {
+        List<String> availableSlots = bookingService.getAvailableSlots(id, date);
+
+        return Response.ok(new ApiResponse<>("SUCCESS", availableSlots)).build();
     }
 
     @GET

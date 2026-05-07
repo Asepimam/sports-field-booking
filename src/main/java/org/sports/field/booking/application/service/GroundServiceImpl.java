@@ -2,6 +2,7 @@ package org.sports.field.booking.application.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.sports.field.booking.application.dto.GroundRequestDTO;
 import org.sports.field.booking.application.dto.GroundResponseDTO;
@@ -66,6 +67,42 @@ public class GroundServiceImpl implements GroundService {
     }
 
     @Override
+    @Transactional
+    public GroundResponseDTO updateGround(String ownerEmail, UUID id, GroundRequestDTO groundRequestDTO) {
+        try {
+            GroundEntity ground = groundRepository.findOptionalById(id)
+                    .orElseThrow(() -> new NotFoundException("Ground not found"));
+
+            if (ground.owner == null || !ownerEmail.equals(ground.owner.email)) {
+                throw new NotFoundException("Ground not found");
+            }
+
+            groundRepository.findByName(groundRequestDTO.getNameGround())
+                    .filter(existingGround -> !existingGround.id.equals(id))
+                    .ifPresent(existingGround -> {
+                        throw new ConflictException("Ground name already exists");
+                    });
+
+            ground.nameGround = groundRequestDTO.getNameGround();
+            ground.location = groundRequestDTO.getLocation();
+            ground.pricePerHour = groundRequestDTO.getPricePerHour();
+            ground.isAvailable = groundRequestDTO.getIsAvailable() != null
+                    ? groundRequestDTO.getIsAvailable()
+                    : true;
+            ground.sportType = groundRequestDTO.getSportType();
+            ground.openTime = groundRequestDTO.getOpenTime();
+            ground.closeTime = groundRequestDTO.getCloseTime();
+            ground.coverImageUrl = groundRequestDTO.getCoverImageUrl();
+
+            return groundMapper.toResponseDTO(ground);
+        } catch (ConflictException | NotFoundException ex) {
+            throw ex;
+        } catch (PersistenceException ex) {
+            throw new DatabaseException("Failed to update ground", ex);
+        }
+    }
+
+    @Override
     public List<GroundResponseDTO> getGrounds(int page, int size) {
         try {
             return groundRepository.getGrounds(page, size)
@@ -83,6 +120,20 @@ public class GroundServiceImpl implements GroundService {
             return groundRepository.countGrounds();
         } catch (PersistenceException ex) {
             throw new DatabaseException("Failed to count grounds", ex);
+        }
+    }
+
+    @Override
+    public GroundResponseDTO getGroundById(UUID id) {
+        try {
+            GroundEntity ground = groundRepository.findOptionalById(id)
+                    .orElseThrow(() -> new NotFoundException("Ground not found"));
+
+            return groundMapper.toResponseDTO(ground);
+        } catch (NotFoundException ex) {
+            throw ex;
+        } catch (PersistenceException ex) {
+            throw new DatabaseException("Failed to fetch ground", ex);
         }
     }
 

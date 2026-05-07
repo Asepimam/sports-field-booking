@@ -44,7 +44,7 @@ public class GroundRequestDTO {
     @JsonFormat(pattern = "HH:mm")
     public LocalTime closeTime;
 
-    @JsonProperty("cove_image_url")
+    @JsonProperty("cover_image_url")
     @NotBlank(message = "URL gambar wajib diisi")
     @Pattern(regexp = "^(https?://).*", message = "Harus berupa URL yang valid")
     public String coverImageUrl;
