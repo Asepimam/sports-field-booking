@@ -23,4 +23,6 @@ public interface BookingRepository {
     boolean existsOverlappingBooking(UUID groundId, LocalDate bookingDate, LocalTime startTime, LocalTime endTime);
 
     List<BookingEntity> getBookingsByGroundAndDate(UUID groundId, LocalDate bookingDate);
+
+    List<BookingEntity> getBookingsByOwnerEmailAndDateRange(String ownerEmail, LocalDate startDate, LocalDate endDate);
 }

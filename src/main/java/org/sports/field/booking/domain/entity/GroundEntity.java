@@ -18,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -74,6 +75,9 @@ public class GroundEntity extends PanacheEntityBase {
     @ManyToOne
     @JoinColumn(name = "owner_id")
     public UserEntity owner;
+
+    @OneToMany(mappedBy = "ground", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    public List<FacilityEntity> facilities = new ArrayList<>();
 
     @Column(nullable = false, updatable = false, name = "created_at")
     public LocalDateTime createdAt;

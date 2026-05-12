@@ -11,6 +11,7 @@ import org.sports.field.booking.application.exception.DatabaseException;
 import org.sports.field.booking.application.exception.NotFoundException;
 import org.sports.field.booking.application.mapper.GroundMapper;
 import org.sports.field.booking.domain.entity.GroundEntity;
+import org.sports.field.booking.domain.entity.SportType;
 import org.sports.field.booking.domain.entity.UserEntity;
 import org.sports.field.booking.domain.repository.GroundRepository;
 import org.sports.field.booking.domain.repository.UserRepository;
@@ -124,6 +125,7 @@ public class GroundServiceImpl implements GroundService {
     }
 
     @Override
+    @Transactional
     public GroundResponseDTO getGroundById(UUID id) {
         try {
             GroundEntity ground = groundRepository.findOptionalById(id)
@@ -215,6 +217,28 @@ public class GroundServiceImpl implements GroundService {
     }
 
     @Override
+    public List<String> getPublicLocations(String keyword, int limit) {
+        try {
+            String searchPattern = "%" + (keyword == null ? "" : keyword.trim().toLowerCase()) + "%";
+            int safeLimit = Math.max(1, Math.min(limit, 20));
+
+            return em.createQuery("""
+                    SELECT DISTINCT g.location
+                    FROM GroundEntity g
+                    WHERE g.isAvailable = true
+                    AND g.location IS NOT NULL
+                    AND LOWER(g.location) LIKE :keyword
+                    ORDER BY g.location ASC
+                    """, String.class)
+                    .setParameter("keyword", searchPattern)
+                    .setMaxResults(safeLimit)
+                    .getResultList();
+        } catch (PersistenceException ex) {
+            throw new DatabaseException("Failed to fetch public ground locations", ex);
+        }
+    }
+
+    @Override
     public List<GroundResponseDTO> searchPublicGrounds(String keyword, String sportType, String location,
             Double minPrice, Double maxPrice, int page, int size) {
         try {
@@ -290,6 +314,14 @@ public class GroundServiceImpl implements GroundService {
 
         if (location != null && !location.trim().isEmpty()) {
             predicates.add(cb.like(cb.lower(ground.get("location")), "%" + location.toLowerCase() + "%"));
+        }
+
+        if (sportType != null && !sportType.trim().isEmpty()) {
+            try {
+                predicates.add(cb.equal(ground.get("sportType"), SportType.valueOf(sportType.trim().toUpperCase())));
+            } catch (IllegalArgumentException ex) {
+                predicates.add(cb.disjunction());
+            }
         }
 
         if (minPrice != null) {

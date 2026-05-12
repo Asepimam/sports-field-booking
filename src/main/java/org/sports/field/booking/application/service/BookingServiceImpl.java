@@ -14,6 +14,7 @@ import org.sports.field.booking.application.exception.InputException;
 import org.sports.field.booking.application.exception.NotFoundException;
 import org.sports.field.booking.domain.entity.BookingEntity;
 import org.sports.field.booking.domain.entity.BookingStatus;
+import org.sports.field.booking.domain.entity.FacilityEntity;
 import org.sports.field.booking.domain.entity.GroundEntity;
 import org.sports.field.booking.domain.entity.UserEntity;
 import org.sports.field.booking.domain.repository.BookingRepository;
@@ -68,8 +69,15 @@ public class BookingServiceImpl implements BookingService {
             booking.bookingDate = request.getBookingDate();
             booking.startTime = request.getStartTime();
             booking.endTime = request.getEndTime();
-            booking.status = BookingStatus.PENDING;
-            booking.totalPrice = calculateTotalPrice(ground.pricePerHour, request);
+            List<FacilityEntity> selectedFacilities = getSelectedFacilities(ground, request.getSelectedFacilities());
+
+            booking.status = BookingStatus.WAITING_PAYMENT;
+            booking.totalPrice = calculateTotalPrice(ground.pricePerHour, request, selectedFacilities);
+
+            // Handle selected facilities
+            if (!selectedFacilities.isEmpty()) {
+                booking.selectedFacilities.addAll(selectedFacilities.stream().map(facility -> facility.name).toList());
+            }
 
             bookingRepository.save(booking);
             return toResponse(booking);
@@ -147,10 +155,11 @@ public class BookingServiceImpl implements BookingService {
                 }
 
                 LocalTime slotStart = current;
+                boolean isPastSlot = date.isEqual(LocalDate.now()) && !slotStart.isAfter(LocalTime.now());
                 boolean isBooked = bookings.stream()
                         .anyMatch(booking -> overlaps(slotStart, slotEnd, booking.startTime, booking.endTime));
 
-                if (!isBooked) {
+                if (!isPastSlot && !isBooked) {
                     availableSlots.add(slotStart.toString());
                 }
 
@@ -169,6 +178,16 @@ public class BookingServiceImpl implements BookingService {
         if (!request.getEndTime().isAfter(request.getStartTime())) {
             throw new InputException("End time must be after start time");
         }
+
+        if (request.getBookingDate().isEqual(LocalDate.now())
+                && !request.getStartTime().isAfter(LocalTime.now())) {
+            throw new InputException("Booking time must be in the future");
+        }
+
+        long minutes = Duration.between(request.getStartTime(), request.getEndTime()).toMinutes();
+        if (minutes < 60 || minutes % 60 != 0) {
+            throw new InputException("Booking duration must be in full-hour blocks");
+        }
     }
 
     private void validateInsideOperatingHours(GroundEntity ground, LocalTime startTime, LocalTime endTime) {
@@ -182,10 +201,39 @@ public class BookingServiceImpl implements BookingService {
         return startTime.isBefore(bookedEndTime) && endTime.isAfter(bookedStartTime);
     }
 
-    private Long calculateTotalPrice(Long pricePerHour, BookingRequestDTO request) {
+    private List<FacilityEntity> getSelectedFacilities(GroundEntity ground, List<String> selectedFacilityNames) {
+        if (selectedFacilityNames == null || selectedFacilityNames.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> normalizedNames = selectedFacilityNames.stream()
+                .filter(name -> name != null && !name.trim().isEmpty())
+                .map(name -> name.trim().toLowerCase())
+                .distinct()
+                .toList();
+
+        List<FacilityEntity> groundFacilities = ground.facilities == null ? List.of() : ground.facilities;
+        List<FacilityEntity> selectedFacilities = groundFacilities.stream()
+                .filter(facility -> facility.name != null)
+                .filter(facility -> normalizedNames.contains(facility.name.toLowerCase()))
+                .toList();
+
+        if (selectedFacilities.size() != normalizedNames.size()) {
+            throw new InputException("Selected facilities are not available for this ground");
+        }
+
+        return selectedFacilities;
+    }
+
+    private Long calculateTotalPrice(Long pricePerHour, BookingRequestDTO request,
+            List<FacilityEntity> selectedFacilities) {
         long minutes = Duration.between(request.getStartTime(), request.getEndTime()).toMinutes();
         long hours = (long) Math.ceil(minutes / 60.0);
-        return pricePerHour * Math.max(hours, 1);
+        long facilityTotal = selectedFacilities.stream()
+                .mapToLong(facility -> facility.price == null ? 0L : facility.price)
+                .sum();
+
+        return (pricePerHour * Math.max(hours, 1)) + facilityTotal;
     }
 
     private BookingResponseDTO toResponse(BookingEntity booking) {
@@ -200,6 +248,7 @@ public class BookingServiceImpl implements BookingService {
         dto.setEndTime(booking.endTime);
         dto.setTotalPrice(booking.totalPrice);
         dto.setStatus(booking.status.name());
+        dto.setSelectedFacilities(booking.selectedFacilities);
         dto.setCreatedAt(booking.createdAt);
         return dto;
     }

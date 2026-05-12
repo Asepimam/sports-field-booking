@@ -28,6 +28,8 @@ public interface GroundService {
 
     List<GroundResponseDTO> getFeaturedGrounds(int limit);
 
+    List<String> getPublicLocations(String keyword, int limit);
+
     List<GroundResponseDTO> searchPublicGrounds(String keyword, String sportType, String location,
             Double minPrice, Double maxPrice, int page, int size);
 

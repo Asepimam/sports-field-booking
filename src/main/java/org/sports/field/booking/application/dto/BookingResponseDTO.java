@@ -3,6 +3,8 @@ package org.sports.field.booking.application.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -38,6 +40,9 @@ public class BookingResponseDTO {
     private Long totalPrice;
 
     private String status;
+
+    @JsonProperty("selected_facilities")
+    private List<String> selectedFacilities = new ArrayList<>();
 
     @JsonProperty("created_at")
     private LocalDateTime createdAt;

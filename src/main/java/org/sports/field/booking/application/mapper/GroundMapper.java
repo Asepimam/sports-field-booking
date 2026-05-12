@@ -6,13 +6,14 @@ import org.sports.field.booking.application.dto.GroundRequestDTO;
 import org.sports.field.booking.application.dto.GroundResponseDTO;
 import org.sports.field.booking.domain.entity.GroundEntity;
 
-@Mapper(config = QuarkusMappingConfig.class)
+@Mapper(config = QuarkusMappingConfig.class, uses = FacilityMapper.class)
 public interface GroundMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "owner", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "facilities", ignore = true)
     // Tidak perlu @Mapping untuk nameGround, location, pricePerHour, isAvailable
     // Karena nama field di DTO dan Entity SAMA PERSIS (nameGround, location,
     // pricePerHour, isAvailable)

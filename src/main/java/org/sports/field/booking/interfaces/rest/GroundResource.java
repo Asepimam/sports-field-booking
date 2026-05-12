@@ -64,16 +64,38 @@ public class GroundResource {
 
     @GET
     @RolesAllowed({ "CUSTOMER", "OWNER" })
-    public Response getGrounds() {
-        int page = 1;
-        int size = 10;
+    public Response getGrounds(
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("size") @DefaultValue("10") int size,
+            @QueryParam("q") String keyword,
+            @QueryParam("sport") String sport,
+            @QueryParam("location") String location,
+            @QueryParam("minPrice") Double minPrice,
+            @QueryParam("maxPrice") Double maxPrice) {
+        List<GroundResponseDTO> grounds;
+        long total;
 
-        List<GroundResponseDTO> grounds = groundService.getGrounds(page, size);
-        long total = groundService.countGrounds();
+        if (hasSearchFilters(keyword, sport, location, minPrice, maxPrice)) {
+            grounds = groundService.searchPublicGrounds(keyword, sport, location, minPrice, maxPrice, page, size);
+            total = groundService.countSearchPublicGrounds(keyword, sport, location, minPrice, maxPrice);
+        } else {
+            grounds = groundService.getGrounds(page, size);
+            total = groundService.countGrounds();
+        }
 
         Meta meta = new Meta(page, size, total);
         return Response.ok(
                 new ApiResponse<>("SUCCESS", grounds, meta)).build();
+    }
+
+    @GET
+    @Path("/locations")
+    @RolesAllowed({ "CUSTOMER", "OWNER" })
+    public Response getGroundLocations(
+            @QueryParam("q") String keyword,
+            @QueryParam("limit") @DefaultValue("20") int limit) {
+        List<String> locations = groundService.getPublicLocations(keyword, limit);
+        return Response.ok(new ApiResponse<>("SUCCESS", locations)).build();
     }
 
     @GET
@@ -119,16 +141,38 @@ public class GroundResource {
     @Path("/public")
     @PermitAll
     public Response getPublicGrounds(
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("size") @DefaultValue("10") int size,
             @QueryParam("sortBy") @DefaultValue("createdAt") String sortBy,
-            @QueryParam("order") @DefaultValue("DESC") String order) {
+            @QueryParam("order") @DefaultValue("DESC") String order,
+            @QueryParam("q") String keyword,
+            @QueryParam("sport") String sport,
+            @QueryParam("location") String location,
+            @QueryParam("minPrice") Double minPrice,
+            @QueryParam("maxPrice") Double maxPrice) {
+        int page = 1;
+        int size = 10;
+        List<GroundResponseDTO> grounds;
+        long total;
 
-        List<GroundResponseDTO> grounds = groundService.getPublicGrounds(page, size, sortBy, order);
-        long total = groundService.countPublicGrounds();
+        if (hasSearchFilters(keyword, sport, location, minPrice, maxPrice)) {
+            grounds = groundService.searchPublicGrounds(keyword, sport, location, minPrice, maxPrice, page, size);
+            total = groundService.countSearchPublicGrounds(keyword, sport, location, minPrice, maxPrice);
+        } else {
+            grounds = groundService.getPublicGrounds(page, size, sortBy, order);
+            total = groundService.countPublicGrounds();
+        }
 
         Meta meta = new Meta(page, size, total);
         return Response.ok(new ApiResponse<>("SUCCESS", grounds, meta)).build();
+    }
+
+    @GET
+    @Path("/public/locations")
+    @PermitAll
+    public Response getPublicLocations(
+            @QueryParam("q") String keyword,
+            @QueryParam("limit") @DefaultValue("10") int limit) {
+        List<String> locations = groundService.getPublicLocations(keyword, Math.min(limit, 10));
+        return Response.ok(new ApiResponse<>("SUCCESS", locations)).build();
     }
 
     @GET
@@ -139,24 +183,15 @@ public class GroundResource {
         return Response.ok(new ApiResponse<>("SUCCESS", featuredGrounds)).build();
     }
 
-    @GET
-    @Path("/public/search")
-    @PermitAll
-    public Response searchPublicGrounds(
-            @QueryParam("keyword") String keyword,
-            @QueryParam("location") String location,
-            @QueryParam("minPrice") Double minPrice,
-            @QueryParam("maxPrice") Double maxPrice,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("size") @DefaultValue("10") int size) {
+    private boolean hasSearchFilters(String keyword, String sport, String location, Double minPrice, Double maxPrice) {
+        return isFilled(keyword)
+                || isFilled(sport)
+                || isFilled(location)
+                || minPrice != null
+                || maxPrice != null;
+    }
 
-        // sportType diabaikan karena tidak ada di entity
-        List<GroundResponseDTO> grounds = groundService.searchPublicGrounds(
-                keyword, null, location, minPrice, maxPrice, page, size);
-
-        long total = groundService.countSearchPublicGrounds(keyword, null, location, minPrice, maxPrice);
-
-        Meta meta = new Meta(page, size, total);
-        return Response.ok(new ApiResponse<>("SUCCESS", grounds, meta)).build();
+    private boolean isFilled(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

@@ -14,7 +14,6 @@ import org.sports.field.booking.application.exception.NotFoundException;
 import org.sports.field.booking.application.exception.ServerException;
 import org.sports.field.booking.application.mapper.ProfileMapper;
 import org.sports.field.booking.application.mapper.UserMapper;
-import org.sports.field.booking.application.mapper.UserMapperImpl;
 import org.sports.field.booking.application.security.PasswordHasher;
 import org.sports.field.booking.application.security.TokenService;
 import org.sports.field.booking.domain.repository.ProfileRepository;

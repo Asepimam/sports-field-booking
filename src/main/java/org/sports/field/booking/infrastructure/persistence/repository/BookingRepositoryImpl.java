@@ -75,4 +75,14 @@ public class BookingRepositoryImpl implements BookingRepository, PanacheReposito
                 and status <> ?3
                 """, groundId, bookingDate, BookingStatus.CANCELLED).list();
     }
+
+    @Override
+    public List<BookingEntity> getBookingsByOwnerEmailAndDateRange(String ownerEmail, LocalDate startDate,
+            LocalDate endDate) {
+        return find("""
+                ground.owner.email = ?1
+                and bookingDate between ?2 and ?3
+                and status <> ?4
+                """, ownerEmail, startDate, endDate, BookingStatus.CANCELLED).list();
+    }
 }

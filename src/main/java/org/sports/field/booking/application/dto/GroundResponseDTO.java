@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -42,6 +44,9 @@ public class GroundResponseDTO {
 
     @JsonProperty("cove_image_url")
     public String coverImageUrl;
+
+    @JsonProperty("facilities")
+    public List<FacilityDTO> facilities = new ArrayList<>();
 
     @JsonProperty("created_at")
     private LocalDateTime createdAt;

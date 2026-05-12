@@ -2,6 +2,8 @@ package org.sports.field.booking.application.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,4 +30,7 @@ public class BookingRequestDTO {
     @JsonProperty("end_time")
     @NotNull(message = "End time is required")
     private LocalTime endTime;
+
+    @JsonProperty("selected_facilities")
+    private List<String> selectedFacilities = new ArrayList<>();
 }

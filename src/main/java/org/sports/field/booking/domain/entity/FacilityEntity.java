@@ -1,18 +1,11 @@
 package org.sports.field.booking.domain.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -23,40 +16,25 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "facilities")
 @Data
-public class BookingEntity extends PanacheEntityBase {
+public class FacilityEntity extends PanacheEntityBase {
     @Id
     @GeneratedValue
     public UUID id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "customer_id", nullable = false)
-    public UserEntity customer;
-
-    @ManyToOne(optional = false)
     @JoinColumn(name = "ground_id", nullable = false)
     public GroundEntity ground;
 
-    @Column(nullable = false, name = "booking_date")
-    public LocalDate bookingDate;
+    @Column(nullable = false, length = 100, name = "name")
+    public String name;
 
-    @Column(nullable = false, name = "start_time")
-    public LocalTime startTime;
+    @Column(length = 500, name = "description")
+    public String description;
 
-    @Column(nullable = false, name = "end_time")
-    public LocalTime endTime;
-
-    @Column(nullable = false, name = "total_price")
-    public Long totalPrice;
-
-    @ElementCollection
-    @Column(name = "facility_name")
-    public List<String> selectedFacilities = new ArrayList<>();
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    public BookingStatus status = BookingStatus.WAITING_PAYMENT;
+    @Column(nullable = false, name = "price", columnDefinition = "BIGINT DEFAULT 0")
+    public Long price = 0L; // Harga tambahan untuk fasilitas ini
 
     @Column(nullable = false, updatable = false, name = "created_at")
     public LocalDateTime createdAt;
@@ -68,6 +46,9 @@ public class BookingEntity extends PanacheEntityBase {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
+        if (price == null) {
+            price = 0L;
+        }
     }
 
     @PreUpdate
